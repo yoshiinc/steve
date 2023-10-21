@@ -19,6 +19,21 @@ pipeline {
   }
 
   stages {
+    stage('Checkout') {
+
+      steps {
+        script {
+          scmVars = checkout([
+              $class: 'GitSCM',
+              branches: scm.branches,
+              doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+              extensions: scm.extensions,
+              userRemoteConfigs: scm.userRemoteConfigs
+          ])
+        }
+        stash includes: '_ci/**', name: 'ci'
+      }
+    }
 
     stage('Setup') {
       steps {
