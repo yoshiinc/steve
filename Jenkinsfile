@@ -45,8 +45,12 @@ pipeline {
 
     stage ('Build Image') {
       steps {
-        script {
-          docker_image = docker.build("${imageName}:${scmVars.GIT_COMMIT}", "-f k8s/docker/Dockerfile .")
+        withEnv(['DB_HOST=steve-test-1.cluster-c2foraz8qcc2.us-west-1.rds.amazonaws.com', 'DB_PORT=3306', 'DB_DATABASE=steve']) {
+          withCredentials([string(credentialsId: "steve-aurora-credentials", usernameVariable: 'DB_USERNAME', passwordVariable: 'DB_PASSWORD')]) {
+            script {
+              docker_image = docker.build("${imageName}:${scmVars.GIT_COMMIT}", "-f k8s/docker/Dockerfile .")
+            }
+          }
         }
       }
     }
@@ -89,38 +93,6 @@ pipeline {
 
       steps {
         echo "deploying to ${params.ENVIRONMENT}"
-        sh 'mkdir -p kubernetes-deployments-checkout'
-        dir('kubernetes-deployments-checkout') {
-          git(
-              url: 'git@github.com:yoshiinc/kube-deployments.git',
-              credentialsId: 'jenkins-github',
-              branch: "master",
-              poll: false
-          )
-
-            sshagent(['jenkins-github']) {
-              sh """
-                  cd env/${params.ENVIRONMENT}/steve
-                  kustomize edit set image steve="${imageTag}"
-
-                  git_status="\$(git status --porcelain .)"
-                  if [ -n "\$git_status" ]; then
-                    echo "There are changes detected, so we are going to commit and push them"
-                    git add -A
-                    git commit -m 'Updated by Jenkins'
-                    git push --set-upstream origin master
-                  fi
-              """
-            }
-
-        }
-
-        withCredentials([string(credentialsId: "argocd-read-only-role", variable: 'ARGOCD_AUTH_TOKEN')]) {
-          sh """
-            argocd --insecure --grpc-web app get ${params.ENVIRONMENT}-steve --refresh
-            argocd --insecure --grpc-web app wait ${params.ENVIRONMENT}-steve --sync --health --timeout ${params.DEPLOY_TIMEOUT}
-          """
-        }
       }
     }
   }

@@ -11,9 +11,10 @@ ARG DB_PORT
 
 WORKDIR /code
 
-ADD /src /code/src
-ADD /website /code/website
-ADD /pom.xml /code/pom.xml
+# ADD /src /code/src
+# ADD /website /code/website
+# ADD /pom.xml /code/pom.xml
+ADD . /code/
 
 RUN sed -i 's|${db.ip}|${env.DB_HOST}|g' pom.xml
 RUN sed -i 's|${db.port}|${env.DB_PORT}|g' pom.xml
