@@ -96,11 +96,4 @@ pipeline {
       }
     }
   }
-
-  post {
-    always {
-      unstash 'ci'
-      sh '_ci/cleanup'
-    }
-  }
 }
