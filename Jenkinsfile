@@ -45,10 +45,10 @@ pipeline {
 
     stage ('Build Image') {
       steps {
-        withEnv(['DB_HOST=steve-test-1.cluster-c2foraz8qcc2.us-west-1.rds.amazonaws.com', "DB_PORT='3306'", 'DB_DATABASE=steve']) {
+        withEnv(['DB_HOST=steve-test-1.cluster-c2foraz8qcc2.us-west-1.rds.amazonaws.com', "DB_PORT=3306", 'DB_DATABASE=steve']) {
           withCredentials([usernamePassword(credentialsId: "steve-aurora-credentials", usernameVariable: 'DB_USERNAME', passwordVariable: 'DB_PASSWORD')]) {
             script {
-              docker_image = docker.build("${imageName}:${scmVars.GIT_COMMIT}", "-f k8s/docker/Dockerfile .")
+              docker_image = docker.build("${imageName}:${scmVars.GIT_COMMIT}", "--build-arg DB_HOST=${DB_HOST} --build-arg DB_PORT=${DB_PORT} --build-arg DB_DATABASE=${DB_DATABASE} --build-arg DB_USERNAME=${DB_USERNAME} --build-arg DB_PASSWORD=${DB_PASSWORD} -f k8s/docker/Dockerfile .")
             }
           }
         }
